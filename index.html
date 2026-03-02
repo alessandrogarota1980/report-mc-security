@@ -1,420 +1,184 @@
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>REPORT SETTIMANALE M.C. SECURITY</title>
 
-
-
 <meta name="apple-mobile-web-app-capable" content="yes">
-
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
 <meta name="apple-mobile-web-app-title" content="Report M.C. Security">
-
 <meta name="theme-color" content="#000000">
 
-
-
 <style>
-
-body {
-
-    font-family: Arial, sans-serif;
-
-    margin: 15px;
-
-    background:#f5f5f5;
-
-}
-
-
-
-h1 {
-
-    text-align:center;
-
-    margin-bottom:5px;
-
-}
-
-
-
-h2 {
-
-    text-align:center;
-
-    margin-top:0;
-
-    font-weight:normal;
-
-}
-
-
-
-.day-block {
-
-    background:white;
-
-    border-radius:12px;
-
-    padding:12px;
-
-    margin-bottom:15px;
-
-    box-shadow:0 3px 10px rgba(0,0,0,0.1);
-
-}
-
-
-
-.day-title {
-
-    font-weight:bold;
-
-    margin-bottom:8px;
-
-}
-
-
-
-.activity {
-
-    margin-bottom:8px;
-
-    padding:8px;
-
-    border-radius:8px;
-
-}
-
-
-
-select, input {
-
-    width:100%;
-
-    padding:8px;
-
-    margin-top:5px;
-
-    font-size:16px;
-
-}
-
-
-
-button {
-
-    width:100%;
-
-    padding:14px;
-
-    font-size:16px;
-
-    margin-top:10px;
-
-    border:none;
-
-    border-radius:8px;
-
-    background:black;
-
-    color:white;
-
-}
-
-
-
+body { font-family: Arial; margin:15px; background:#f5f5f5; }
+h1, h2 { text-align:center; }
+.day-block { background:white; border-radius:12px; padding:12px; margin-bottom:15px; box-shadow:0 3px 10px rgba(0,0,0,0.1); }
+.day-title { font-weight:bold; margin-bottom:8px; }
+.activity { margin-bottom:8px; padding:8px; border-radius:8px; }
+select, input { width:100%; padding:8px; margin-top:5px; font-size:16px; }
+button { width:100%; padding:14px; font-size:16px; margin-top:10px; border:none; border-radius:8px; background:black; color:white; }
 .no-print { margin:15px 0; }
-
-
-
-@media print {
-
-    .no-print { display:none; }
-
-    select { display:none; }
-
-}
-
-
-
-/* COLORI */
-
+@media print { .no-print { display:none; } select { display:none; } }
 .riposo { background:#C6EFCE; }
-
 .ufficio-cremona { background:#9BC2E6; }
-
 .ufficio-mantova { background:#BDD7EE; }
-
 .smart { background:#FFE699; }
-
 .sopralluogo { background:#F8CBAD; }
-
 .servizio { background:#D9D2E9; }
-
 .altro { background:#E7E6E6; }
-
 </style>
-
 </head>
-
 <body>
 
-
-
 <h1>M.C. SECURITY</h1>
-
 <h2 id="periodo">REPORT SETTIMANALE</h2>
 
-
-
 <div class="no-print">
-
 <input type="date" id="dataInizio" onchange="generaSettimana()">
-
+<button onclick="salvaReport()">SALVA NEL CLOUD</button>
 <button onclick="window.print()">STAMPA REPORT</button>
-
 </div>
-
-
 
 <div id="contenitore"></div>
 
+<script type="module">
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB639Gcg2aMDA1ZA9Pb3fiqhPZi-AshSnM",
+  authDomain: "report-mc-security.firebaseapp.com",
+  projectId: "report-mc-security",
+  storageBucket: "report-mc-security.firebasestorage.app",
+  messagingSenderId: "573517488026",
+  appId: "1:573517488026:web:23a15d90aaf45b499ce423"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const giorni = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
-
 const tipi = ["RIPOSO","UFFICIO","SMARTWORKING","SOPRALLUOGO","SERVIZIO","ALTRO"];
 
-
-
-function generaSettimana() {
-
+window.generaSettimana = function() {
     const dataInput = document.getElementById("dataInizio").value;
-
     if (!dataInput) return;
 
-
-
     const start = new Date(dataInput);
-
     const container = document.getElementById("contenitore");
-
     container.innerHTML = "";
 
-
-
     for (let i=0;i<7;i++) {
-
         const current = new Date(start);
-
         current.setDate(start.getDate()+i);
 
-
-
         const dayDiv = document.createElement("div");
-
         dayDiv.className="day-block";
 
-
-
         dayDiv.innerHTML = '<div class="day-title">' +
-
             giorni[i] + ' - ' + current.toLocaleDateString("it-IT") +
-
             '</div>';
-
-
 
         for (let j=0;j<3;j++) {
 
-
-
             let options = "";
-
             tipi.forEach(function(t){
-
-                if (t==="ALTRO") {
-
-                    options += '<option value="'+t+'" selected>'+t+'</option>';
-
-                } else {
-
-                    options += '<option value="'+t+'">'+t+'</option>';
-
-                }
-
+                options += '<option value="'+t+'">'+t+'</option>';
             });
 
-
-
             const activity = document.createElement("div");
-
             activity.className="activity altro";
 
-
-
             activity.innerHTML =
-
                 '<select onchange="gestioneTipo(this)">' +
-
                 options +
-
                 '</select>' +
-
                 '<input type="text">' +
-
                 '<div class="ufficio-scelta" style="display:none;">' +
-
                 '<select onchange="scegliUfficio(this)">' +
-
                 '<option value="">Seleziona sede</option>' +
-
                 '<option value="CREMONA">CREMONA</option>' +
-
                 '<option value="MANTOVA">MANTOVA</option>' +
-
                 '</select></div>';
 
-
-
             dayDiv.appendChild(activity);
-
         }
 
-
-
         container.appendChild(dayDiv);
-
     }
-
-
 
     const end = new Date(start);
-
     end.setDate(start.getDate()+6);
-
     document.getElementById("periodo").innerText =
-
         "REPORT SETTIMANA DAL " + start.toLocaleDateString("it-IT") +
-
         " AL " + end.toLocaleDateString("it-IT");
-
 }
 
-
-
-function gestioneTipo(select) {
-
+window.gestioneTipo = function(select) {
     const activity = select.closest(".activity");
-
     const input = activity.querySelector("input");
-
     const ufficioDiv = activity.querySelector(".ufficio-scelta");
-
     const val = select.value;
 
-
-
     activity.className="activity altro";
-
     input.readOnly=false;
 
-
-
     if (val==="RIPOSO") {
-
         activity.className="activity riposo";
-
         input.value="RIPOSO";
-
         input.readOnly=true;
-
         ufficioDiv.style.display="none";
-
     }
-
     else if (val==="SMARTWORKING") {
-
         activity.className="activity smart";
-
         input.value="SMARTWORKING";
-
         input.readOnly=true;
-
         ufficioDiv.style.display="none";
-
     }
-
     else if (val==="UFFICIO") {
-
         input.value="";
-
         input.readOnly=true;
-
         ufficioDiv.style.display="block";
-
     }
-
     else {
-
         input.value="";
-
         input.readOnly=false;
-
         ufficioDiv.style.display="none";
-
-
 
         if (val==="SOPRALLUOGO") activity.className="activity sopralluogo";
-
         if (val==="SERVIZIO") activity.className="activity servizio";
-
     }
-
 }
 
-
-
-function scegliUfficio(select) {
-
+window.scegliUfficio = function(select) {
     const activity = select.closest(".activity");
-
     const input = activity.querySelector("input");
 
-
-
     if (select.value==="CREMONA") {
-
         activity.className="activity ufficio-cremona";
-
         input.value="UFFICIO CREMONA";
-
     }
-
     if (select.value==="MANTOVA") {
-
         activity.className="activity ufficio-mantova";
-
         input.value="UFFICIO MANTOVA";
-
     }
+}
 
+window.salvaReport = async function() {
+
+    const data = {
+        dataInizio: document.getElementById("dataInizio").value,
+        timestamp: new Date()
+    };
+
+    await addDoc(collection(db, "report_settimanali"), data);
+
+    alert("Report salvato nel cloud ✅");
 }
 
 </script>
 
-
-
 </body>
-
 </html>
